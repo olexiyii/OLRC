@@ -4,12 +4,15 @@ import ol.rc.utils.JSTUNClient;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.*;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -17,47 +20,39 @@ import java.util.Arrays;
 import java.util.Properties;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class STUNConnectionChenelTest {
+    public static final Logger logger = LoggerFactory.getLogger(STUNConnectionChenelTest.class);
     JSTUNClient.ConnectionData connectionData;
     Properties propertiesToLoad;
     ServerSocket serverSocket;
     ServerSocketChannel serverSocketChannel;
-    public static final Logger logger = LoggerFactory.getLogger(STUNConnectionChenelTest.class);
 
     @Before
-    public void init(){
+    public void init() {
         InputStream is = getClass().getClassLoader().getResourceAsStream("stunServers.txt");
-        BufferedReader br=new BufferedReader(new InputStreamReader(is));
-        connectionData=JSTUNClient.getExtermalConnectionData(br.lines()
-                .filter(str->!(str.startsWith("#")
-                    ||str.startsWith(" ")
-                    ||str.length()<10))
-                .map(str->str.split(":"))
-                .map(strArr->strArr.length==2?strArr:new String[]{strArr[0],"3478"})
-                .map(strArr->new InetSocketAddress(strArr[0],Integer.parseInt(strArr[1])))
+        BufferedReader br = new BufferedReader(new InputStreamReader(is));
+        connectionData = JSTUNClient.getExtermalConnectionData(br.lines()
+                .filter(str -> !(str.startsWith("#")
+                        || str.startsWith(" ")
+                        || str.length() < 10))
+                .map(str -> str.split(":"))
+                .map(strArr -> strArr.length == 2 ? strArr : new String[]{strArr[0], "3478"})
+                .map(strArr -> new InetSocketAddress(strArr[0], Integer.parseInt(strArr[1])))
                 .collect(Collectors.toList())
         );
 
         try {
-            serverSocketChannel=ServerSocketChannel.open();
+            serverSocketChannel = ServerSocketChannel.open();
             serverSocketChannel.bind(new InetSocketAddress(connectionData.datagramSocket.getLocalPort()));
         } catch (IOException e) {
             e.printStackTrace();
         }
 
     }
+
     @Test
-    public void testChanelOnJSTUNConnection(){
-        Socket socket=null;
-        DatagramSocket dsOut=null;
-        try {
-            dsOut=new DatagramSocket();
-        } catch (SocketException e) {
-            e.printStackTrace();
-        }
+    public void testChanelOnJSTUNConnection() {
         SocketChannel socketChannelWrite = null;
         try {
             socketChannelWrite = SocketChannel.open();
@@ -66,22 +61,22 @@ public class STUNConnectionChenelTest {
             logger.info(e.getStackTrace().toString());
         }
 
-        String msg="test msg";
-        String msgResult= "";
+        String msg = "test msg";
+        String msgResult = "";
 
-        ExecutorService executorService= Executors.newSingleThreadExecutor();
-        Future<String> future=executorService.submit(()->{
-            int n=100;
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        Future<String> future = executorService.submit(() -> {
+            int n = 100;
             logger.info("Start");
             ByteBuffer buf = ByteBuffer.allocate(1024);
 
-            SocketChannel finalSocketChannel =serverSocketChannel.accept();
+            SocketChannel finalSocketChannel = serverSocketChannel.accept();
 
             finalSocketChannel.configureBlocking(true);
             int bytesRead = finalSocketChannel.read(buf);
 
 
-            return new String(Arrays.copyOfRange(buf.array(),0,bytesRead));
+            return new String(Arrays.copyOfRange(buf.array(), 0, bytesRead));
         });
 
         try {
@@ -98,7 +93,7 @@ public class STUNConnectionChenelTest {
         }
 
         try {
-            msgResult=future.get(10, TimeUnit.SECONDS);
+            msgResult = future.get(10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             logger.info(e.getStackTrace().toString());
         } catch (ExecutionException e) {
@@ -106,6 +101,7 @@ public class STUNConnectionChenelTest {
         } catch (TimeoutException e) {
             logger.info(e.getStackTrace().toString());
         }
+        executorService.shutdownNow();
 
         Assert.assertTrue(msg.equals(msgResult));
     }

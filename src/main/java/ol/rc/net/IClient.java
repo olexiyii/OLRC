@@ -3,7 +3,11 @@ package ol.rc.net;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
+/**
+ * the {@link IClient} sends info to {@link IServer} by using externalSocket
+ */
 public interface IClient {
-    public void send(Object obj) throws IOException;
-    public void setExternalSocket(InetSocketAddress localSocket) throws IOException;
+    void send(Object obj) throws IOException;
+
+    void setExternalSocket(InetSocketAddress externalSocket) throws IOException;
 }
