@@ -4,10 +4,13 @@ import ol.rc.BaseOLRC;
 import ol.rc.net.IDirectingMachine;
 import ol.rc.net.IHandler;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
+
+/**
+ * @author Oleksii Ivanov
+ */
 
 public class DirectingMachineImpl extends BaseOLRC implements IDirectingMachine {
     public Stack<Object> stackHandlerData;

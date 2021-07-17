@@ -8,6 +8,9 @@ import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 
+/**
+ *  @author Oleksii Ivanov
+ */
 public class ClientImpl extends BaseOLRC implements IClient {
     private ObjectOutputStream outputStream;
     private InetSocketAddress externalSocket;
