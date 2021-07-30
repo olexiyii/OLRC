@@ -16,6 +16,7 @@ class ParallelXORByte extends Kernel {
     //private byte[] imgBuffer = new byte[initSize];//screen size
     private byte[] imgBuffer;// = new byte[initSize];//screen size
 
+
     /**
      * Current image data
      */
@@ -23,7 +24,7 @@ class ParallelXORByte extends Kernel {
     private byte[] imgResult;// = new byte[initSize];//screen size
 
     public ParallelXORByte() {
-        setExecutionModeWithoutFallback(EXECUTION_MODE.GPU);
+//        setExecutionModeWithoutFallback(EXECUTION_MODE.GPU);
         reset();
     }
 
@@ -45,15 +46,15 @@ class ParallelXORByte extends Kernel {
     }
 
     /**
-     * @param imgBuffer
+     * previous imgBuffer is Result on current iteration
+     * @param imgBufferParam
      * @return
      */
-    public byte[] process(byte[] imgBuffer) {
-        setImgBuffer(imgBuffer);
-        if (this.imgBuffer.length != imgResult.length) {
-            //
-            //imgResult = new byte[imgBuffer.length];
-            imgResult = imgBuffer;
+    public byte[] process(byte[] imgBufferParam) {
+
+        setImgBuffer(imgBufferParam);
+        if (this.imgBuffer.length != imgBufferParam.length) {
+            setResult(imgBufferParam);
         } else {
             execute(imgBuffer.length);
         }
@@ -72,5 +73,10 @@ class ParallelXORByte extends Kernel {
 
     public byte[] getResult() {
         return imgResult;
+    }
+
+    public void setResult(byte[] imgResult) {
+        this.imgResult=imgResult;
+        //setImgBuffer(imgResult);
     }
 }

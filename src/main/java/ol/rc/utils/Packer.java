@@ -1,7 +1,11 @@
 package ol.rc.utils;
 
+import ol.rc.client.ScreenPublisherImpl;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
@@ -14,11 +18,12 @@ public class Packer {
     private Deflater compressor;
     private Inflater decompressor;
     private ByteArrayOutputStream baos;
-    byte[] buffer=new byte[1024];
+    byte[] buffer=new byte[1024*1024];
 
     public Packer() {
         decompressor = new Inflater();
         baos = new ByteArrayOutputStream();
+
     }
     public void setCompressorLevel(int level){
         compressor.setLevel(level);
@@ -26,6 +31,11 @@ public class Packer {
 
     public byte[] pack(byte[] input) throws IOException {
         long start=System.currentTimeMillis();
+
+        //Files.write(Paths.get("beforeCompressBytes"+ ScreenPublisherImpl.fileCount),input);
+
+
+
         compressor = new Deflater();
         setCompressorLevel(Deflater.BEST_SPEED);
         compressor.setInput(input);
@@ -37,17 +47,25 @@ public class Packer {
             int count = compressor.deflate(buffer);
             baos.write(buffer, 0, count);
         }
+        baos.flush();
         baos.close();
         return baos.toByteArray();
     }
 
     public byte[] unpack(byte[] input) throws IOException, DataFormatException {
+        //decompressor = new Inflater();
+        decompressor.reset();
         decompressor.setInput(input);
         baos.reset();
-        while (!decompressor.finished()) {
-            int count = decompressor.inflate(buffer);
+
+        int count;
+        while (!decompressor.finished() && (count = decompressor.inflate(buffer))>0) {
+
             baos.write(buffer, 0, count);
         }
+
+//        decompressor.end();
+        baos.flush();
         baos.close();
         return baos.toByteArray();
     }

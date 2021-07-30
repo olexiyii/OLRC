@@ -13,24 +13,23 @@ import java.util.Stack;
  */
 
 public class DirectingMachineImpl extends BaseOLRC implements IDirectingMachine {
-    public Stack<Object> stackHandlerData;
     Map<Class, IHandler> handlers;
-    // TODO: 16.07.2021  remove stackHandlerData after testing
 
     public DirectingMachineImpl() {
         super(DirectingMachineImpl.class);
         handlers = new HashMap<>();
-        stackHandlerData = new Stack<>();
     }
 
     @Override
     public void direct(Object obj) {
         IHandler currentHandler = handlers.get(obj.getClass());
+        if (currentHandler==null){
+            logger.error("No IHandler for " + obj.getClass());
+            return;
+        }
         try {
             currentHandler.process(obj);
-            stackHandlerData.push(obj);
         } catch (Exception e) {
-            logger.error("No IHandler for " + obj.getClass());
             error(e);
         }
     }

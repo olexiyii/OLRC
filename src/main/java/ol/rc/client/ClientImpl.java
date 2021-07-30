@@ -2,6 +2,7 @@ package ol.rc.client;
 
 import ol.rc.BaseOLRC;
 import ol.rc.net.IClient;
+import ol.rc.net.NetObject;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -23,11 +24,10 @@ public class ClientImpl extends BaseOLRC implements IClient {
     public ClientImpl(InetSocketAddress localSocket) throws IOException {
         super(ClientImpl.class);
         setExternalSocket(localSocket);
-        logger.info("Client created");
     }
 
     @Override
-    public void send(Object obj) throws IOException {
+    public void send(NetObject obj) throws IOException {
         outputStream.writeObject(obj);
         outputStream.flush();
     }

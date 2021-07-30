@@ -4,6 +4,7 @@ import junit.framework.TestCase;
 import ol.rc.BaseOLRC;
 import ol.rc.client.ClientImpl;
 import ol.rc.net.IHandler;
+import ol.rc.net.NetObject;
 import ol.rc.server.DirectingMachineImpl;
 import ol.rc.server.ServerImpl;
 import ol.rc.utils.JSTUNClient;
@@ -69,6 +70,11 @@ public class ClientServerTest extends BaseOLRC {
             System.out.println("Integer handler process:" + obj);
             ClientServerTest.stackHandlerData.push(obj);
         });
+        server.getDirectingMachine().setHandler(NetObject.class, (obj) -> {
+            System.out.println("NetObject handler process:" + obj);
+            server.getDirectingMachine().direct(((NetObject)obj).data);
+
+        });
     }
 
     @Test
@@ -94,19 +100,19 @@ public class ClientServerTest extends BaseOLRC {
 
         logger.info("send "+ dataInteger);
         try {
-            client.send(dataInteger);
+            client.send(NetObject.createOBJECT(dataInteger));
         } catch (IOException e) {
             e.printStackTrace();
         }
         logger.info("send "+ dataString);
         try {
-            client.send(dataString);
+            client.send(NetObject.createOBJECT(dataString));
         } catch (IOException e) {
             e.printStackTrace();
         }
         logger.info("send "+ dataInteger);
         try {
-            client.send(dataInteger);
+            client.send(NetObject.createOBJECT(dataInteger));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -116,9 +122,9 @@ public class ClientServerTest extends BaseOLRC {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        TestCase.assertEquals(((DirectingMachineImpl)server.getDirectingMachine()).stackHandlerData.pop(), dataInteger);
-        TestCase.assertEquals(((DirectingMachineImpl)server.getDirectingMachine()).stackHandlerData.pop(), dataString);
-        TestCase.assertEquals(((DirectingMachineImpl)server.getDirectingMachine()).stackHandlerData.pop(), dataInteger);
+        TestCase.assertEquals(stackHandlerData.pop(), dataInteger);
+        TestCase.assertEquals(stackHandlerData.pop(), dataString);
+        TestCase.assertEquals(stackHandlerData.pop(), dataInteger);
         //TestCase.assertEquals(0, 0);
     }
 

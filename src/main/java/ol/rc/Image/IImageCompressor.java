@@ -4,7 +4,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 
 /**
- * The @{@link IImageСompressor} compress before transfer and decompress after transfer Image
+ * The @{@link IImageCompressor} compress before transfer and decompress after transfer Image
  *  For each implementation should be true for pseudocode:
  *  <code>
  *      decompressor.setImageSettings(img.width, img.height, img.bytesPerPixel);
@@ -13,7 +13,7 @@ import java.awt.image.BufferedImage;
  *
  * @author Oleksii Ivanov
  */
-public interface IImageСompressor {
+public interface IImageCompressor {
 
     /**
      * Compress image pixel data
@@ -33,10 +33,12 @@ public interface IImageСompressor {
 
     /**
      * Sets base params of image to restore
-     * @param width
-     * @param height
      */
     void setImageSettings(int width,int height);
     void setImageSettings(Rectangle bounds);
+    void setResultArray(byte[] data);
+    void setResultImage(BufferedImage resultImage);
+
+    byte[] getResultData();
 
 }

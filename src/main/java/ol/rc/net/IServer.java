@@ -19,4 +19,5 @@ public interface IServer {
     IDirectingMachine getDirectingMachine();
 
     void setDirectingMachine(IDirectingMachine directingMachine);
+    void start();
 }

@@ -17,6 +17,7 @@ public class BaseOLRC {
         logger = LoggerFactory.getLogger(clazz);
     }
 
+
     protected BaseOLRC() {
     }
 
@@ -25,9 +26,13 @@ public class BaseOLRC {
         BaseOLRC.loggerStatic.error(Arrays.toString(tr.getStackTrace()));
     }
 
+    public static void logInfo(String info) {
+        BaseOLRC.loggerStatic.info(info);
+    }
+
     public void error(Throwable tr) {
         logger.error(tr.getMessage());
-        logger.error(Arrays.toString(tr.getStackTrace()));
+        Arrays.stream(tr.getStackTrace()).forEach(System.out::println);
     }
 
 }

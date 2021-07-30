@@ -18,7 +18,7 @@ public class ScreenReaderImpl extends BaseOLRC implements IScreenReader{
 
     private ScreenReaderImpl(){
     }
-    private ScreenReaderImpl(GraphicsDevice gd,Rectangle bounds){
+    public ScreenReaderImpl(GraphicsDevice gd,Rectangle bounds){
         super(ScreenReaderImpl.class);
         setBounds(bounds);
         setGraphicsDevice(gd);

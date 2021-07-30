@@ -3,13 +3,18 @@ package ol.rc.server;
 import ol.rc.BaseOLRC;
 import ol.rc.net.IDirectingMachine;
 import ol.rc.net.IServer;
+import ol.rc.net.NetObject;
 
+import javax.imageio.ImageIO;
+import java.awt.image.RenderedImage;
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.file.Paths;
 
 public class ServerImpl extends BaseOLRC implements IServer {
     private ServerSocketChannel serverSocketChannel;
@@ -48,6 +53,12 @@ public class ServerImpl extends BaseOLRC implements IServer {
         this.directingMachine = directingMachine;
     }
 
+    @Override
+    public void start() {
+        receiveThread.setDaemon(true);
+        receiveThread.start();
+    }
+
     private void closeReceiveProcess() {
         try {
             receiveThread.interrupt();
@@ -79,7 +90,7 @@ public class ServerImpl extends BaseOLRC implements IServer {
             while (true) {
 
                 try {
-                    Object obj = objectInputStream.readObject();
+                    NetObject obj = (NetObject) objectInputStream.readObject();
                     directingMachine.direct(obj);
                 } catch (IOException | ClassNotFoundException e) {
                     error(e);
@@ -97,14 +108,12 @@ public class ServerImpl extends BaseOLRC implements IServer {
         closeReceiveProcess();
 
         receiveThread = new Thread(createListenerProcess());
-        receiveThread.setDaemon(true);
-        receiveThread.start();
     }
 
     @Override
     protected void finalize() throws Throwable {
         super.finalize();
-        receiveThread.interrupt();
+        receiveThread.stop();
     }
 
     public void setLocalSocketAddress(InetAddress destIaddress, int destPort) {
