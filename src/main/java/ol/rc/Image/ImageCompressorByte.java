@@ -7,6 +7,7 @@ import ol.rc.utils.Packer;
 import java.awt.*;
 import java.awt.image.*;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.zip.DataFormatException;
 
 /**
@@ -79,17 +80,26 @@ public class ImageCompressorByte extends BaseOLRC implements IImageCompressor {
     @Override
     public BufferedImage decompress(byte[] data) {
         kernelCompress.setResult(previousBuffer);
-        byte[] tmp ;
         byte[] tmpRes= null;
         try {
-            tmp = packer.unpack(data);
-            tmpRes= kernelCompress.process(tmp);
+            WeakReference ws=new WeakReference(packer.unpack(data));
+            tmpRes= kernelCompress.process((byte[]) ws.get());
+            ws.clear();
         } catch (DataFormatException | IOException e) {
             logError(e);
         }
-        WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(tmpRes, tmpRes.length), width, height, width * bytesPerPixel, bytesPerPixel, new int[]{2, 1, 0}, null);
+        WeakReference ws=new WeakReference(new DataBufferByte(tmpRes, tmpRes.length));
+        WeakReference ws1=new WeakReference(Raster.createInterleavedRaster((DataBufferByte)ws.get(), width, height, width * bytesPerPixel, bytesPerPixel, new int[]{2, 1, 0}, null));
+        WritableRaster raster =(WritableRaster)ws1.get();
+        //WritableRaster raster = Raster.createInterleavedRaster((DataBufferByte)ws.get(), width, height, width * bytesPerPixel, bytesPerPixel, new int[]{2, 1, 0}, null);
+
+
         BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
         img.setData(raster);
+        ws.clear();
+        ws1.clear();
+        ws=null;
+        ws1=null;
         previousBuffer=tmpRes;
 
 

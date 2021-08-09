@@ -30,6 +30,7 @@ public class ClientImpl extends BaseOLRC implements IClient {
     public void send(NetObject obj) throws IOException {
         outputStream.writeObject(obj);
         outputStream.flush();
+        outputStream.reset();
     }
 
     private void updateExternalSocket() throws IOException {

@@ -3,62 +3,86 @@ package ol.rc.ui;
 import ol.rc.BaseOLRC;
 import ol.rc.Image.IImageCompressor;
 import ol.rc.Main;
-import ol.rc.net.DataKind;
-import ol.rc.net.IDirectingMachine;
-import ol.rc.net.IServer;
-import ol.rc.net.NetObject;
+import ol.rc.net.*;
 
 import javax.swing.*;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
+import javax.swing.event.MouseInputAdapter;
 import java.awt.*;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 
 public class RemoteScreenView extends BaseOLRC {
     Graphics imageGraphics;
     private IServer server;
+    private IClient client;
     private IDirectingMachine directingMachine;
     private IImageCompressor imageCompressor;
     private JFrame frame;
     private JPanel panel;
-    private JPanel imagePanel;
+    private JComponent imageComponent;
     private ImageObserver imageObserver;
 
 
-    public RemoteScreenView(IServer server, IImageCompressor imageCompressor) {
+    public RemoteScreenView(IServer server, IImageCompressor imageCompressor,IClient client) {
         super(RemoteScreenView.class);
-        createUI();
         this.server = server;
-
+        this.client = client;
         directingMachine = server.getDirectingMachine();
         this.imageCompressor = imageCompressor;
         createDirectingMachine();
-
-
-        //createDirectingMachine();
-
+        createUI();
     }
 
     Graphics getImageGraphics() {
-        if (imageGraphics == null) {
-            imageGraphics = imagePanel.getGraphics();
+//        if (imageGraphics == null) {
+//            imageGraphics = imagePanel.getGraphics();
+//        }
+        return getImageComponent().getGraphics();
+    }
+    JComponent createImageComponent(){
+        JPanel result=new JPanel();
+        MouseInputAdapter mouseInputAdapter=new OlMouseInputAdapter(client);
+        result.addMouseListener(mouseInputAdapter);
+        OlKeyAdapter keyAdapter=new OlKeyAdapter(client);
+        result.addKeyListener(keyAdapter);
+        result.setFocusable(true);
+        return  result;
+    }
+    JComponent getImageComponent() {
+        if (imageComponent == null) {
+            imageComponent = createImageComponent();
         }
-        return imageGraphics;
+        return imageComponent;
     }
 
     private void createDirectingMachine() {
 
 
         directingMachine.setHandler(BufferedImage.class, (bufferedImage) -> {
-            drowScreen((BufferedImage) bufferedImage);
-            imageCompressor.setResultImage((BufferedImage) bufferedImage);
+            BufferedImage bufferedImage1=((BufferedImage)bufferedImage).getSubimage(0,0,((BufferedImage)bufferedImage).getWidth(),((BufferedImage)bufferedImage).getHeight());
+            drowScreen(bufferedImage1);
+            imageCompressor.setResultImage(bufferedImage1);
         });
 
         directingMachine.setHandler(byte[].class, (byteArrayDifferencies) -> {
-            drowDifferencies((byte[]) byteArrayDifferencies);
+            int length=((byte[]) byteArrayDifferencies).length;
+            byte[] data=new byte[length];
+            System.arraycopy((byte[]) byteArrayDifferencies,0,data,0,length);
+            drowDifferencies(data);
+
         });
 
         directingMachine.setHandler(NetObject.class, (netObject) -> {
             Main.SEMAPHORE.release();
+//            Main.frameCount--;
+//            if (Main.frameCount<=0){
+//                Main.frameCount=10;
+                System.gc();
+//            }
+
 
             NetObject netObject1 = (NetObject) netObject;
             DataKind dataKind = netObject1.dataKind;
@@ -67,9 +91,13 @@ public class RemoteScreenView extends BaseOLRC {
                     break;
                 case SCREEN_INITIAL:
                     directingMachine.direct(netObject1.data);
+                    netObject1=null;
                     break;
                 case SCREEN_DIFFERENCES:
+//                    byte[] data= (byte[]) netObject1.data;
+//                    byte[] data1=new byte[data.length];
                     directingMachine.direct(netObject1.data);
+                    netObject1=null;
                     break;
                 case FILE_FINISH:
                     //TODO make file transfer
@@ -90,14 +118,25 @@ public class RemoteScreenView extends BaseOLRC {
 
     }
 
+    private double getZoomLevel(Rectangle dest,Rectangle src){
+        double zoomLevelHeight=dest.getHeight()/src.getHeight();
+        double zoomLevelWidth=dest.getWidth()/src.getWidth();
+        return Math.min(zoomLevelHeight,Math.min(zoomLevelWidth,1));
+    }
     private void drowScreen(BufferedImage bufferedImage) {
-        getImageGraphics().drawImage(bufferedImage, 0, 0, imageObserver);
+
+        JComponent imageComponent=getImageComponent();
+
+        Graphics g=getImageGraphics();
+        //double zoomLevel=getZoomLevel(imageComponent.getBounds(),bufferedImage.getData().getBounds());
+        g.drawImage(bufferedImage, 0, 0,imageComponent.getWidth(),imageComponent.getHeight(), imageObserver);
+        g.dispose();
     }
 
     private void drowDifferencies(byte[] differencies) {
 
         BufferedImage bufferedImage = imageCompressor.decompress(differencies);
-        getImageGraphics().drawImage(bufferedImage, 0, 0, imageObserver);
+        drowScreen(bufferedImage);
     }
 
     private void createUI() {
@@ -111,9 +150,9 @@ public class RemoteScreenView extends BaseOLRC {
         panel = new JPanel(new BorderLayout());
         frame.add(new JScrollPane(panel));
 
-        imagePanel = new JPanel();
-        imageObserver = imagePanel;
-        panel.add(imagePanel, BorderLayout.CENTER);
+        imageComponent = getImageComponent();
+        imageObserver = imageComponent;
+        panel.add(imageComponent, BorderLayout.CENTER);
 
         frame.pack();
         frame.setLocationRelativeTo(null);

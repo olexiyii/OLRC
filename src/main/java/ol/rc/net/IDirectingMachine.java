@@ -13,6 +13,7 @@ public interface IDirectingMachine {
      */
     void direct(Object obj);
 
+
     /**
      * sets {@link IHandler} <code>handler</code> for {@link Class} <code>clazz</code>
      *

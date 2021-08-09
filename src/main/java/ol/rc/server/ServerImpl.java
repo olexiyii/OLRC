@@ -10,11 +10,11 @@ import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.file.Paths;
 
 public class ServerImpl extends BaseOLRC implements IServer {
     private ServerSocketChannel serverSocketChannel;
@@ -22,9 +22,17 @@ public class ServerImpl extends BaseOLRC implements IServer {
     private Thread receiveThread;
     private IDirectingMachine directingMachine;
 
-    public ServerImpl(InetSocketAddress localSocketAddress, IDirectingMachine directingMachine) {
+    public ServerImpl() {
         super(ServerImpl.class);
+    }
+
+    public ServerImpl(IDirectingMachine directingMachine) {
+        this();
         setDirectingMachine(directingMachine);
+    }
+
+    public ServerImpl(InetSocketAddress localSocketAddress, IDirectingMachine directingMachine) {
+        this(directingMachine);
         setLocalSocketAddress(localSocketAddress);
     }
 
@@ -90,8 +98,10 @@ public class ServerImpl extends BaseOLRC implements IServer {
             while (true) {
 
                 try {
-                    NetObject obj = (NetObject) objectInputStream.readObject();
-                    directingMachine.direct(obj);
+                    WeakReference wr=new WeakReference(objectInputStream.readObject());
+                    //NetObject obj = (NetObject) objectInputStream.readObject();
+                    directingMachine.direct(wr.get());
+                    wr.clear();
                 } catch (IOException | ClassNotFoundException e) {
                     error(e);
                     break;

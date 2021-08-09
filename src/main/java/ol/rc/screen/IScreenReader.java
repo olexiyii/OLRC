@@ -2,6 +2,8 @@ package ol.rc.screen;
 
 
 import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 
 /** The interface to provide ability to get screenshot from specified GraphicsDevice and bounds
@@ -41,6 +43,9 @@ public interface IScreenReader {
 
     boolean isNewSettings();
     void resetNewSettings();
+
+    void receiveMouseEvent(MouseEvent srcEvent);
+    void receiveKey(KeyEvent srcEvent);
 
     public static int[] getDifference(Image img){
         try {
