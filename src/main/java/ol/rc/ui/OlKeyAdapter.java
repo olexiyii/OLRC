@@ -6,7 +6,6 @@ import ol.rc.net.NetObject;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
 import java.io.IOException;
 
 public class OlKeyAdapter extends KeyAdapter {
@@ -32,7 +31,7 @@ public class OlKeyAdapter extends KeyAdapter {
     @Override
     public void keyTyped(KeyEvent e) {
 //        super.keyTyped(e);
-//        sendEvent(e);
+        sendEvent(e);
     }
 
     @Override

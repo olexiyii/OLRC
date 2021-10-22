@@ -69,7 +69,7 @@ public class ScreenReaderTest1 extends BaseOLRC {
         createDirectingMachine();
     }
 
-    @Test
+    //@Test
     public void сreateScreenShots() throws IOException, ClassNotFoundException {
 
         for (int i=0;i<imgCount;i++){
@@ -121,7 +121,7 @@ public class ScreenReaderTest1 extends BaseOLRC {
         return data;
     }
 
-    @Test
+    //@Test
     public void writeNetObjectTest() throws IOException, ClassNotFoundException, DataFormatException {
 
         int imgCount = 3;

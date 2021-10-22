@@ -5,9 +5,6 @@ import ol.rc.net.IDirectingMachine;
 import ol.rc.net.IServer;
 import ol.rc.net.NetObject;
 
-import javax.imageio.ImageIO;
-import java.awt.image.RenderedImage;
-import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.lang.ref.WeakReference;
@@ -15,8 +12,10 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.Semaphore;
 
 public class ServerImpl extends BaseOLRC implements IServer {
+
     private ServerSocketChannel serverSocketChannel;
     private InetSocketAddress localSocketAddress;
     private Thread receiveThread;
@@ -41,14 +40,12 @@ public class ServerImpl extends BaseOLRC implements IServer {
         return localSocketAddress;
     }
 
+
     @Override
     public void setLocalSocketAddress(InetSocketAddress localSocketAddress) {
+        stop();
         this.localSocketAddress = localSocketAddress;
-        try {
-            updateServerSocket();
-        } catch (Exception e) {
-            error(e);
-        }
+        start();
     }
 
     @Override
@@ -63,11 +60,23 @@ public class ServerImpl extends BaseOLRC implements IServer {
 
     @Override
     public void start() {
-        receiveThread.setDaemon(true);
-        receiveThread.start();
+        if (receiveThread ==null) {
+            receiveThread = new Thread(createListenerProcess());
+            receiveThread.setDaemon(true);
+            receiveThread.start();
+        }
+
+    }
+
+    @Override
+    public void stop() {
+        closeReceiveProcess();
     }
 
     private void closeReceiveProcess() {
+        if (receiveThread==null){
+            return;
+        }
         try {
             receiveThread.interrupt();
         } catch (Exception e) {
@@ -78,9 +87,10 @@ public class ServerImpl extends BaseOLRC implements IServer {
 
     private Runnable createListenerProcess() {
         return () -> {
-            int count = 0;
 
             try {
+                serverSocketChannel = ServerSocketChannel.open();
+                serverSocketChannel.socket().bind(new InetSocketAddress(localSocketAddress.getPort()));
                 serverSocketChannel.configureBlocking(true);
             } catch (IOException e) {
                 BaseOLRC.logError(e);
@@ -92,6 +102,7 @@ public class ServerImpl extends BaseOLRC implements IServer {
                 socketChannel = serverSocketChannel.accept();
                 objectInputStream = new ObjectInputStream(socketChannel.socket().getInputStream());
             } catch (IOException e) {
+                BaseOLRC.logInfo("SERVER objectInputStream error" );
                 error(e);
                 return;
             }
@@ -99,14 +110,13 @@ public class ServerImpl extends BaseOLRC implements IServer {
 
                 try {
                     WeakReference wr=new WeakReference(objectInputStream.readObject());
-                    //NetObject obj = (NetObject) objectInputStream.readObject();
                     directingMachine.direct(wr.get());
                     wr.clear();
                 } catch (IOException | ClassNotFoundException e) {
+                    BaseOLRC.logInfo("SERVER objectInputStream readObject error" );
                     error(e);
                     break;
                 }
-                count++;
             }
         };
     }
@@ -123,12 +133,11 @@ public class ServerImpl extends BaseOLRC implements IServer {
     @Override
     protected void finalize() throws Throwable {
         super.finalize();
-        receiveThread.stop();
+        receiveThread.interrupt();
     }
 
     public void setLocalSocketAddress(InetAddress destIaddress, int destPort) {
         setLocalSocketAddress(new InetSocketAddress(destIaddress, destPort));
     }
-
 
 }

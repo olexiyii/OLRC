@@ -21,4 +21,5 @@ public interface IDirectingMachine {
      * @param handler - handler for {@link Class} <code>clazz</code>
      */
     void setHandler(Class<?> clazz, IHandler handler);
+
 }

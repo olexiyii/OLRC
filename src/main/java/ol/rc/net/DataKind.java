@@ -10,6 +10,7 @@ public enum DataKind {
     FILE_FINISH,
     FILE_START_NAME,
     FILE_DATA,
-    OBJECT
-
+    OBJECT,
+    NET_REMOTE_ADDRESS,
+    APP_TYPE
 }

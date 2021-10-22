@@ -19,7 +19,7 @@ public class NetObjectTest {
     public void init() {
     }
 
-    @Test
+    //@Test
     public void SCREEN_DIFFERENCESTest() throws IOException, ClassNotFoundException {
 
         int imgCount=3;

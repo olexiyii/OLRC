@@ -13,12 +13,17 @@
  *   limitations under the License.
  */
 
-package ol.rc.net;
+package ol.rc.app;
 
 /**
- * The {@link IHandler} process object
+ * This class holds settings for Manipulator
+ * Now it have same functionality as {@link GeneralSettings} but logical is separate instance
+ *
  * @author Oleksii Ivanov
  */
-public interface IHandler<T> {
-    void process(T obj);
+public class ManipulatorSettings extends GeneralSettings {
+    @Override
+    public String getName() {
+        return "Manupulator";
+    }
 }

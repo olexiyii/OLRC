@@ -1,40 +1,40 @@
-package ol.rc.client;
+package ol.rc.publish;
 
-import com.sun.xml.internal.ws.api.ha.StickyFeature;
+import com.aparapi.device.Device;
 import ol.rc.BaseOLRC;
 import ol.rc.Image.IImageCompressor;
 import ol.rc.Image.ImageCompressorByte;
-import ol.rc.Main;
 import ol.rc.net.*;
 import ol.rc.screen.IScreenReader;
-import sun.nio.ch.Net;
 
-import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.net.InetSocketAddress;
 
 /**
  * @author Oleksii Ivanov
  */
 public class ScreenPublisherImpl extends BaseOLRC implements IScreenPublisher {
-    public static int fileCount = 0;
+    public static int count = 0;
     private final Object monitorObj = new Object();
     private IClient client;
     private IServer server;
     private IScreenReader screenReader;
     private IImageCompressor imageCompressor;
-    private int fps = 10;
+    private int fps = 20;
     private int sleepTimeMilliseconds = 100;
     private Thread publishProcess;
 
-    private WeakReference wsNetObject;
-
     private ScreenPublisherImpl() {
 
+    }
+
+    public ScreenPublisherImpl(IClient client, IScreenReader screenReader, IServer server, Device device) {
+        this(client,screenReader,server);
+        imageCompressor.setDeviceForParallelCalc(device);
     }
 
     public ScreenPublisherImpl(IClient client, IScreenReader screenReader,IServer server) {
@@ -44,7 +44,7 @@ public class ScreenPublisherImpl extends BaseOLRC implements IScreenPublisher {
         imageCompressor = new ImageCompressorByte();
         setScreenReader(screenReader);
         publishProcess = new Thread(createPublishProcess());
-        publishProcess.start();
+        //publishProcess.start();
         createDirectingMachine();
         //this.server.start();
     }
@@ -68,18 +68,28 @@ public class ScreenPublisherImpl extends BaseOLRC implements IScreenPublisher {
     public void setScreenReader(IScreenReader screenReader) {
         this.screenReader = screenReader;
         imageCompressor.setImageSettings(screenReader.getBounds());
-        try {
-            synchronized (monitorObj) {
-                client.send(NetObject.createSCREEN_INITIAL(screenReader.getImage()));
-            }
-        } catch (IOException e) {
-            logError(e);
-        }
     }
 
     @Override
     public int getFPS() {
         return fps;
+    }
+
+    @Override
+    public void start() {
+        if (publishProcess==null){
+            publishProcess = new Thread(createPublishProcess());
+        }
+        if (!publishProcess.isAlive()){
+            publishProcess.start();
+        }
+        server.start();
+    }
+
+    @Override
+    public void stop() {
+        publishProcess.interrupt();
+        publishProcess=null;
     }
 
     @Override
@@ -91,24 +101,23 @@ public class ScreenPublisherImpl extends BaseOLRC implements IScreenPublisher {
     private Runnable createPublishProcess() {
         return () -> {
             int errorCountMax = 1;
+            long start = System.currentTimeMillis();
             while (true) {
-                synchronized (monitorObj) {
+                System.gc();
 
-                    long start = System.currentTimeMillis();
-
-                    NetObject objToSend = getObjectToSend();
-                    sendWhithRetry(objToSend, errorCountMax);
-                    //wsNetObject.clear();
-
-                    long sleepTimeMillisecondsLeft = sleepTimeMilliseconds - (System.currentTimeMillis() - start);
-                    if (sleepTimeMillisecondsLeft > 0) {
-                        try {
-                            Thread.sleep(sleepTimeMillisecondsLeft);
-                        } catch (InterruptedException e) {
-                            logError(e);
-                        }
-
+                WeakReference<NetObject> wr=new WeakReference<>(getObjectToSend());
+                sendWhithRetry(wr.get(), errorCountMax);
+                wr.clear();
+                wr=null;
+                long sleepTimeMillisecondsLeft = sleepTimeMilliseconds - (System.currentTimeMillis() - start);
+                start = System.currentTimeMillis();
+                if (sleepTimeMillisecondsLeft > 0) {
+                    try {
+                        Thread.sleep(sleepTimeMillisecondsLeft);
+                    } catch (InterruptedException e) {
+                        logError(e);
                     }
+
                 }
             }
         };
@@ -120,11 +129,6 @@ public class ScreenPublisherImpl extends BaseOLRC implements IScreenPublisher {
         while (errorCount < errorCountMax) {
             try {
                 client.send(objToSend);
-                try {
-                    Main.SEMAPHORE.acquire();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
 
                 errorCount = 0;
                 break;
@@ -132,6 +136,7 @@ public class ScreenPublisherImpl extends BaseOLRC implements IScreenPublisher {
                 e.printStackTrace();
                 logError(e);
                 errorCount++;
+                logInfo("sendWhithRetry errorCount:"+errorCount);
             }
         }
     }
@@ -154,35 +159,32 @@ public class ScreenPublisherImpl extends BaseOLRC implements IScreenPublisher {
     private void createDirectingMachine() {
         IDirectingMachine directingMachine=server.getDirectingMachine();
 
-
-
         directingMachine.setHandler(byte[].class, (byteArrayDifferencies) -> {
-            int length=((byte[]) byteArrayDifferencies).length;
-            byte[] data=new byte[length];
-            System.arraycopy((byte[]) byteArrayDifferencies,0,data,0,length);
+//            int length=((byte[]) byteArrayDifferencies).length;
+//            byte[] data=new byte[length];
+//            System.arraycopy((byte[]) byteArrayDifferencies,0,data,0,length);
         });
 
+        directingMachine.setHandler(NetObject.class,null);
+        directingMachine.setHandler(InetSocketAddress.class,null);
+
         directingMachine.setHandler(NetObject.class, (netObject) -> {
-            Main.SEMAPHORE.release();
             System.gc();
             NetObject netObject1 = (NetObject) netObject;
             DataKind dataKind = netObject1.dataKind;
             switch (dataKind) {
                 case MOUSE:
-                    //screenReader.receiveMouseEvent((MouseEvent) netObject1.data);
+                    screenReader.receiveMouseEvent((MouseEvent) netObject1.data);
                     break;
                 case KEY:
                     screenReader.receiveKey((KeyEvent) netObject1.data);
                     break;
                 case SCREEN_INITIAL:
-                    directingMachine.direct(netObject1.data);
-                    netObject1=null;
+                    if(netObject1.data==null){
+                        screenReader.setNewSettings();
+                    }
                     break;
                 case SCREEN_DIFFERENCES:
-//                    byte[] data= (byte[]) netObject1.data;
-//                    byte[] data1=new byte[data.length];
-                    directingMachine.direct(netObject1.data);
-                    netObject1=null;
                     break;
                 case FILE_FINISH:
                     //TODO make file transfer
@@ -196,17 +198,13 @@ public class ScreenPublisherImpl extends BaseOLRC implements IScreenPublisher {
                 case OBJECT:
                     break;
                 default:
+                    //directingMachine.direct(netObject1.data);
                     System.out.println("dataKind:" + dataKind);
                     break;
             }
+            netObject1=null;
         });
 
     }
-//    void mouseReceive(MouseEvent mouseEvent){
-//        screenReader.receiveMouseEvent(mouseEvent);
-//    }
-//    void keyReceive(KeyEvent keyEvent){
-//        screenReader.receiveKey(keyEvent);
-//    }
 
 }

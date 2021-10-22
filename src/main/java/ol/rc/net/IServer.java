@@ -8,7 +8,6 @@ import java.net.InetSocketAddress;
  */
 public interface IServer {
     InetSocketAddress getLocalSocketAddress();
-
     /**
      * sets socket for listen
      *
@@ -20,4 +19,5 @@ public interface IServer {
 
     void setDirectingMachine(IDirectingMachine directingMachine);
     void start();
+    void stop();
 }

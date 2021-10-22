@@ -51,7 +51,7 @@ public class STUNConnectionChenelTest {
 
     }
 
-    @Test
+    //@Test
     public void testChanelOnJSTUNConnection() {
         SocketChannel socketChannelWrite = null;
         try {

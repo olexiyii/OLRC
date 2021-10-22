@@ -13,12 +13,32 @@
  *   limitations under the License.
  */
 
-package ol.rc.net;
+package ol.rc.publish;
+
+import ol.rc.net.IClient;
+import ol.rc.screen.IScreenReader;
+
 
 /**
- * The {@link IHandler} process object
+ * The publisher interface for
+ * Publish screen to client
+ *
  * @author Oleksii Ivanov
  */
-public interface IHandler<T> {
-    void process(T obj);
+public interface IScreenPublisher {
+    IClient getClient();
+
+
+    void setClient(IClient client);
+
+    IScreenReader getScreenReader();
+
+    void setScreenReader(IScreenReader screenReader);
+
+    void setFPS(int fps);
+
+    int getFPS();
+
+    void start();
+    void stop();
 }

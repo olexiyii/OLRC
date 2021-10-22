@@ -1,6 +1,8 @@
 package ol.rc.net;
 
 
+import ol.rc.BaseOLRC;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
@@ -11,6 +13,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,7 +22,7 @@ import java.util.Map;
  */
 public class NetObject implements Serializable {
     private static final long SerialVersionUID = 1L;
-    public static Map<Class, ISerializeWriter> writers = new HashMap<>();
+    public static final Map<Class, ISerializeWriter> writers = new HashMap<>();
 
     static {
         writers.put(BufferedImage.class, (out, obj) -> {
@@ -59,34 +62,18 @@ public class NetObject implements Serializable {
         return new NetObject(DataKind.KEY, e);
     }
 
+    public static NetObject createInetSocketAddress(InetSocketAddress inetSocketAddress) {
+        return new NetObject(DataKind.NET_REMOTE_ADDRESS, inetSocketAddress);
+    }
+
+
     public static NetObject createMouse(MouseEvent e) {
         String methodName;//methodName,
         Rectangle srcRectangle = ((JComponent) e.getSource()).getBounds();
 
-//        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-//        for (StackTraceElement stackTraceElement : stackTrace) {
-//            System.out.println(stackTraceElement);
-//        }
-//        double wScale=1.0*e.getX()/srcRectangle.width;
-//        double hScale=1.0*e.getY()/srcRectangle.height;
-
-//        int x= (int) (srcEvent.getX()*wScale);
-//        int y= (int) (srcEvent.getY()*hScale);
-
-
-//        methodName = stackTrace[3].getMethodName();
-//        Object[] toData = new Object[]{methodName, e,srcRectangle};
         MouseEvent toDataObj = new MouseEvent(e.getComponent(), e.getID(), e.getWhen(), e.getModifiers()
                 , e.getX(), e.getY(), srcRectangle.width, srcRectangle.height
                 , e.getClickCount(), e.isPopupTrigger(), e.getButton());
-        //    public MouseEvent(Component source, int id, long when, int modifiers,
-        //        int x, int y, int xAbs, int yAbs,
-        //        int clickCount, boolean popupTrigger, int button)
-
-//        List<String> stackTraceList= Arrays.stream(stackTrace)
-//                .map(StackTraceElement::toString)
-//                .collect(Collectors.toList());
-//        methodName=
         return new NetObject(DataKind.MOUSE, toDataObj);
     }
 
@@ -114,12 +101,19 @@ public class NetObject implements Serializable {
 
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
+        if (data==null){
+            out.writeObject(null);//Class
+            out.writeObject(null);//date
+            return;
+        }
         out.writeObject(data.getClass());
 
         if (this.dataKind == DataKind.KEY) {
-            out.writeObject((KeyEvent) data);
+            out.writeObject(data);
         } else if (this.dataKind == DataKind.MOUSE) {
-            out.writeObject((MouseEvent) data);
+            out.writeObject(data);
+        } else if (this.dataKind == DataKind.NET_REMOTE_ADDRESS) {
+            out.writeObject(data);
         } else if (this.dataKind == DataKind.SCREEN_INITIAL) {
             if (data.getClass() == BufferedImage.class) {
                 ImageIO.write((BufferedImage) data, "png", out); // png is lossless
@@ -141,11 +135,28 @@ public class NetObject implements Serializable {
 
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
-        Class clazz = (Class) in.readObject();
+        Object obj=new Object();
+        Class clazz =null;
+        try {
+            obj = in.readObject();
+            if (obj != null){
+                clazz = (Class)obj;
+            }else {
+                data=null;
+                return;
+            }
+        }catch (ClassCastException e){
+            BaseOLRC.logInfo("ClassCastException");
+            BaseOLRC.logInfo("readObject");
+            BaseOLRC.logInfo(obj.getClass().getName());
+            BaseOLRC.logInfo(obj.toString());
+        }
 
         if (this.dataKind == DataKind.KEY) {
             data = in.readObject();
         } else if (this.dataKind == DataKind.MOUSE) {
+            data = in.readObject();
+        } else if (this.dataKind == DataKind.NET_REMOTE_ADDRESS) {
             data = in.readObject();
         } else if (clazz == BufferedImage.class) {
             data = ImageIO.read(in);
@@ -153,7 +164,7 @@ public class NetObject implements Serializable {
             int length = in.readInt();
 
             byte[] dataByte = new byte[1024];
-            int count = 0;
+            int count ;
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
@@ -165,6 +176,7 @@ public class NetObject implements Serializable {
             baos.close();
             data = baos.toByteArray();
             baos = null;
+            dataByte= null;
         } else {
             data = in.readObject();
         }

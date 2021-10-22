@@ -58,7 +58,7 @@ public class STUNConnectionTest {
         }
 
     }
-    @Test
+    //@Test
     public void testSocketObjectIO(){
         Socket socket=null;
         DatagramSocket dsOut=null;

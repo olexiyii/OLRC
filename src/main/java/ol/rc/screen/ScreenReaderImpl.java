@@ -73,6 +73,11 @@ public class ScreenReaderImpl extends BaseOLRC implements IScreenReader {
         flagNewSettings = false;
     }
 
+    @Override
+    public void setNewSettings() {
+        flagNewSettings = true;
+    }
+
     private int mouseButtonConvertToInputEvent(MouseEvent srcEvent) {
         int buttonMask = 0;
         int mouseEventButton = srcEvent.getButton();

@@ -9,5 +9,5 @@ import java.net.InetSocketAddress;
 public interface IClient {
     void send(NetObject obj) throws IOException;
 
-    void setExternalSocket(InetSocketAddress externalSocket) throws IOException;
+    void setExternalSocket(InetSocketAddress externalSocket);
 }

@@ -1,0 +1,20 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="OLRC">
+    <output-path>$PROJECT_DIR$/out/artifacts/OLRC</output-path>
+    <root id="archive" name="OLRC.jar">
+      <element id="module-output" name="OLRC" />
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/META-INF/MANIFEST.MF" />
+      </element>
+      <element id="file-copy" path="$PROJECT_DIR$/src/main/resources/log4j.properties" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/de/javawi/jstun/jstun/0.7.4/jstun-0.7.4.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/log4j/log4j/1.2.17/log4j-1.2.17.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/slf4j/slf4j-api/1.7.5/slf4j-api-1.7.5.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/slf4j/slf4j-log4j12/1.7.31/slf4j-log4j12-1.7.31.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/aparapi/aparapi-jni/1.4.2/aparapi-jni-1.4.2.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/aparapi/aparapi/2.0.0/aparapi-2.0.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/apache/bcel/bcel/6.4.1/bcel-6.4.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/scala-lang/scala-library/2.13.1/scala-library-2.13.1.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

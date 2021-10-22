@@ -12,10 +12,10 @@ import java.util.zip.Inflater;
  * @author Oleksii Ivanov
  */
 public class Packer {
-    byte[] buffer = new byte[1024 * 1024];
-    private Deflater compressor;
-    private Inflater decompressor;
-    private ByteArrayOutputStream baos;
+    private final byte[] buffer = new byte[1024 * 1024];
+    private final Deflater compressor;
+    private final Inflater decompressor;
+    private final ByteArrayOutputStream baos;
 
     public Packer() {
         decompressor = new Inflater();
